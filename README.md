@@ -22,6 +22,103 @@ The table written by the notebook is:
 
 where `catalog` and `schema` come from [project_config.yml](project_config.yml).
 
+## Notebook Classification
+
+Not all notebooks in this repository should be treated the same way. Some are primarily for interactive learning, one is currently packaged as a deployable workflow, and some can create billable resources or depend on external credentials.
+
+### Demo
+
+#### [notebooks/1.1_foundation_models_overview.py](notebooks/1.1_foundation_models_overview.py)
+
+Use this notebook interactively.
+
+What it does:
+
+1. Explains the difference between Foundation Model APIs, provisioned throughput, and external models.
+2. Lists available Databricks serving endpoints in the workspace.
+3. Sends a sample request to a Databricks-hosted model.
+4. Compares pricing concepts.
+
+Why it is classified as `demo`:
+
+1. It is primarily educational.
+2. It does not define a production workflow.
+3. It is most useful for exploration inside a notebook session.
+
+Recommendation:
+
+Run it manually in Databricks if you want to explore model availability and understand the concepts. Do not deploy it as a scheduled job.
+
+### Deployable
+
+#### [notebooks/1.3_arxiv_data_ingestion.py](notebooks/1.3_arxiv_data_ingestion.py)
+
+This is the main deployable workflow in the repo.
+
+What it does:
+
+1. Loads the selected environment from [project_config.yml](project_config.yml).
+2. Creates the target schema if it does not already exist.
+3. Fetches arXiv metadata.
+4. Writes the results to the Delta table `arxiv_papers`.
+
+Why it is classified as `deployable`:
+
+1. It has a job definition in [resources/arxiv_data_ingestion_job.yml](resources/arxiv_data_ingestion_job.yml).
+2. It is already wired into the Databricks Asset Bundle.
+3. It performs a repeatable data-ingestion task with a clear output table.
+
+Recommendation:
+
+This is the notebook to validate, deploy, and run through the Databricks bundle workflow.
+
+### Costly/Risky
+
+#### [notebooks/1.2_provisioned_throughput_deployment.py](notebooks/1.2_provisioned_throughput_deployment.py)
+
+What it does:
+
+1. Creates a provisioned throughput serving endpoint.
+2. Waits for the endpoint to become ready.
+3. Sends a sample request to the endpoint.
+4. Shows monitoring information and cost estimates.
+5. Includes cleanup guidance.
+
+Why it is classified as `costly/risky`:
+
+1. It can create a billable Databricks model serving endpoint.
+2. It contains hardcoded demo values such as endpoint name, model name, catalog, and schema.
+3. Running it without adapting those values can fail or create resources you do not actually want.
+
+Recommendation:
+
+Do not deploy this by default. Only run it intentionally, after reviewing costs, model availability, permissions, and cleanup steps.
+
+#### [notebooks/1.4_external_models_custom_provider.py](notebooks/1.4_external_models_custom_provider.py)
+
+What it does:
+
+1. Creates an external model endpoint backed by OpenAI.
+2. Uses a Databricks secret reference for the provider API key.
+3. Calls the endpoint to generate images.
+
+Why it is classified as `costly/risky`:
+
+1. It depends on a secret scope and secret key already existing in the workspace.
+2. It can incur external provider charges.
+3. It contains hardcoded demo endpoint and secret names.
+
+Recommendation:
+
+Do not deploy this by default. Only run it if you explicitly want external-model integration and have configured your own secret scope, secret key, and endpoint naming.
+
+## Recommended Usage By Notebook
+
+1. Use [notebooks/1.1_foundation_models_overview.py](notebooks/1.1_foundation_models_overview.py) as an interactive learning notebook.
+2. Use [notebooks/1.3_arxiv_data_ingestion.py](notebooks/1.3_arxiv_data_ingestion.py) as the main deployable workflow.
+3. Treat [notebooks/1.2_provisioned_throughput_deployment.py](notebooks/1.2_provisioned_throughput_deployment.py) as an intentional infrastructure exercise with potential cost.
+4. Treat [notebooks/1.4_external_models_custom_provider.py](notebooks/1.4_external_models_custom_provider.py) as an intentional external-integration exercise with credential and cost implications.
+
 ## General Run Flow
 
 The normal workflow for this repo is:
