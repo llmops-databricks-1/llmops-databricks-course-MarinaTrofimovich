@@ -163,3 +163,4 @@ credentials.json
 .databrickscfg
 
 *.whl
+GIT_REMOTES.md
