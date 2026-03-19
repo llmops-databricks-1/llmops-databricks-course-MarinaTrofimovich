@@ -60,8 +60,8 @@ def fetch_arxiv_papers(query: str = "cat:cs.AI OR cat:cs.LG", max_results: int =
             "pdf_url": result.pdf_url,
             "primary_category": result.primary_category,
             "ingestion_timestamp": datetime.now().isoformat(),
-            "processed": None,  # Will be set in Lecture 2.2
-            "volume_path": None  # Will be set in Lecture 2.2
+            "processed": int(datetime.now().strftime("%Y%m%d%H%M")),
+            "volume_path": None
         }
         papers.append(paper)
 
