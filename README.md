@@ -375,6 +375,49 @@ Typical fixes:
 2. Remove `.venv` and retry.
 3. Clear or relocate the `uv` cache.
 
+## Git Remotes
+
+This repository uses multiple Git remotes, each pointing to a different GitHub repository.
+
+### Configured Remotes
+
+| Remote | URL | Purpose |
+|--------|-----|---------|
+| `origin` | `https://github.com/llmops-databricks-1/course-code-hub.git` | Upstream course repository (shared template) |
+| `laya` | `git@github.com:layagroup/course-code-hub.git` | Internal team repository |
+| `student` | `https://github.com/llmops-databricks-1/llmops-databricks-course-MarinaTrofimovich.git` | Personal student submissions |
+
+### Pushing to a Specific Remote
+
+```bash
+# Push to student repo (for PR submissions)
+git push student week1
+
+# Push to internal team repo
+git push laya week2
+
+# Push to upstream course repo (use with caution)
+git push origin main
+```
+
+### Branch Strategy
+
+Each week's work lives on its own branch (`week1`, `week2`, etc.). Pull requests are opened from `weekN` to `main` on the `student` remote.
+
+```bash
+# Create a new week branch from the current one
+git checkout -b week3
+
+# After committing your work, push and open a PR
+git push student week3
+```
+
+### Viewing Remotes
+
+```bash
+git remote -v
+```
+
 ## Summary
 
 In general, we run this repo in two phases:
