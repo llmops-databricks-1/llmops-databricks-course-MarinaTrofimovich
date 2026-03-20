@@ -55,6 +55,7 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 90
 
+[tool.ruff.lint]
 select = [
     "F",    # pyflakes rules
     "E",    # pycodestyle error rules
@@ -78,6 +79,9 @@ ignore = [
     "ANN102",
     "ANN101"
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"notebooks/*.py" = ["E402", "F821", "E501", "ANN201"]
 
 [tool.ruff.format]
 indent-style = "space"
