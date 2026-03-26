@@ -400,6 +400,33 @@ git push laya week2
 git push origin main
 ```
 
+### Before Pushing
+
+Run the local checks before pushing any branch.
+
+```bash
+uv sync --extra ci
+uv run pre-commit run --all-files
+uv run pytest
+```
+
+What these checks do:
+
+1. `uv sync --extra ci` installs the CI tools locally, including `pytest` and `pre-commit`.
+2. `uv run pre-commit run --all-files` runs formatting and lint checks on the whole repository.
+3. `uv run pytest` verifies the test suite passes before you push.
+
+Recommended push flow:
+
+```bash
+git add -A
+git commit -m "your change message"
+uv sync --extra ci
+uv run pre-commit run --all-files
+uv run pytest
+git push student week2
+```
+
 ### Branch Strategy
 
 Each week's work lives on its own branch (`week1`, `week2`, etc.). Pull requests are opened from `weekN` to `main` on the `student` remote.
