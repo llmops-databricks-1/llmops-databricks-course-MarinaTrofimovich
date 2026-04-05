@@ -22,6 +22,13 @@ class ProjectConfig(BaseModel):
     genie_space_id: str | None = Field(
         None, description="Genie space ID for MCP integration"
     )
+    lakebase_project_id: str | None = Field(
+        None, description="Lakebase project ID for session memory"
+    )
+    experiment_name: str = Field(
+        default="/Shared/arxiv-curator-course",
+        description="MLflow experiment name",
+    )
     system_prompt: str = Field(
         default=(
             "You are a helpful AI assistant that helps"

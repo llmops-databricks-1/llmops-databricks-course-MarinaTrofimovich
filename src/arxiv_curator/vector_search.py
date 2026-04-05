@@ -58,6 +58,13 @@ class VectorSearchManager:
         else:
             logger.info(f"✓ Vector search endpoint exists: {self.endpoint_name}")
 
+    def _get_index_for_current_endpoint(self) -> object:
+        """Get the index bound to the configured endpoint."""
+        return self.client.get_index(
+            endpoint_name=self.endpoint_name,
+            index_name=self.index_name,
+        )
+
     def create_or_get_index(self) -> object:
         """Create or get vector search index.
 
@@ -69,7 +76,7 @@ class VectorSearchManager:
 
         # Try to get existing index
         try:
-            index = self.client.get_index(index_name=self.index_name)
+            index = self._get_index_for_current_endpoint()
             logger.info(f"✓ Vector search index exists: {self.index_name}")
             return index
         except Exception:
@@ -92,9 +99,27 @@ class VectorSearchManager:
         except Exception as e:
             if "RESOURCE_ALREADY_EXISTS" not in str(e):
                 raise
-            # Index exists but get_index failed earlier (transient) — retry
-            logger.info(f"✓ Vector search index exists: {self.index_name}")
-            return self.client.get_index(index_name=self.index_name)
+
+            try:
+                index = self._get_index_for_current_endpoint()
+                logger.info(f"✓ Vector search index exists: {self.index_name}")
+                return index
+            except Exception as current_endpoint_error:
+                try:
+                    existing_index = self.client.get_index(index_name=self.index_name)
+                    existing_endpoint = getattr(
+                        existing_index, "endpoint_name", "unknown endpoint"
+                    )
+                except Exception:
+                    existing_endpoint = "unknown endpoint"
+
+                raise RuntimeError(
+                    "Vector search index exists, but it is not bound to the configured "
+                    f"endpoint '{self.endpoint_name}'. Existing index endpoint: "
+                    f"'{existing_endpoint}'. This usually means the index is stale and "
+                    "still points to a deleted endpoint. Delete the existing index and "
+                    "recreate it on the current endpoint."
+                ) from current_endpoint_error
 
     def sync_index(self) -> None:
         """Sync the vector search index with the source table."""
@@ -116,7 +141,7 @@ class VectorSearchManager:
         Returns:
             Search results dictionary
         """
-        index = self.client.get_index(index_name=self.index_name)
+        index = self._get_index_for_current_endpoint()
         results = index.similarity_search(
             query_text=query,
             columns=["id", "text", "metadata"],
