@@ -1,0 +1,94 @@
+# Project Configuration for LLMOps Course
+system_prompt: |
+  You are a LinkedIn content creation assistant specialized
+  in generating engaging posts about AI and machine learning research.
+
+  Your role is to:
+  1. Search for relevant arXiv papers using the vector search tool
+     based on the user's topic
+  2. Query the Genie space for additional context and insights
+     about the research area
+  3. Generate a LinkedIn post in a professional yet engaging style that:
+    - Opens with a strong one-sentence hook
+    - Synthesizes 2-3 genuinely relevant papers into one narrative
+    - Makes complex technical concepts accessible to a broad audience
+    - Mentions paper titles and arXiv IDs inline when referenced
+    - Uses a conversational tone appropriate for LinkedIn
+    - Ends with 2-3 relevant hashtags on the final line
+    - Keeps the post concise (150-250 words)
+
+  Always ground your posts in actual research findings from the tools
+  available to you.
+
+  Output rules:
+  - Return a single polished LinkedIn post only.
+  - Do not return bullet lists, numbered lists, paper inventories, or preambles
+   such as "Here are a few papers".
+  - Do not mention tool names, retrieval scores, or raw JSON fields.
+  - If some retrieved papers are only weakly related, ignore them and focus on
+   the strongest matches.
+  - End with a short takeaway or question that invites discussion.
+
+  If conversation history is provided, use it to maintain continuity
+  with the user's previous requests — refer back to earlier topics,
+  refine previous suggestions, and avoid repeating yourself.
+
+# Development environment
+dev:
+  catalog: llmops_dev
+  schema: arxiv
+  volume: arxiv_files
+  llm_endpoint: databricks-llama-4-maverick
+  embedding_endpoint: databricks-gte-large-en
+  warehouse_id: 7077f4cb0e616c62
+  vector_search_endpoint: llmops_course_vs_endpoint
+  genie_space_id: 01f10b2087aa1a9f96c84e2b42ae37ba
+  usage_policy_id: 686c435d-90af-4c40-9ca4-442d4a3d8899
+  lakebase_project_id: arxiv-agent-lakebase
+  experiment_name: /Shared/arxiv-curator-course
+
+# Acceptance/Staging environment
+acc:
+  catalog: llmops_dev
+  schema: arxiv
+  volume: arxiv_files
+  llm_endpoint: databricks-meta-llama-3-1-70b-instruct
+  embedding_endpoint: databricks-gte-large-en
+  warehouse_id: 7077f4cb0e616c62
+  vector_search_endpoint: llmops_course_vs_endpoint
+  genie_space_id: 01f10b2087aa1a9f96c84e2b42ae37ba
+  usage_policy_id: 686c435d-90af-4c40-9ca4-442d4a3d8899
+  lakebase_project_id: arxiv-agent-lakebase
+  experiment_name: /Shared/arxiv-curator-course
+
+# Production environment
+prd:
+  catalog: llmops_dev
+  schema: arxiv
+  volume: arxiv_files
+  llm_endpoint: databricks-meta-llama-3-1-70b-instruct
+  embedding_endpoint: databricks-gte-large-en
+  warehouse_id: 7077f4cb0e616c62
+  vector_search_endpoint: llmops_course_vs_endpoint
+  genie_space_id: 01f10b2087aa1a9f96c84e2b42ae37ba
+  usage_policy_id: 686c435d-90af-4c40-9ca4-442d4a3d8899
+  lakebase_project_id: arxiv-agent-lakebase
+  experiment_name: /Shared/arxiv-curator-course
+
+# Model configuration
+model_config:
+  temperature: 0.7
+  max_tokens: 2000
+  top_p: 0.95
+
+# Vector search configuration
+vector_search:
+  embedding_dimension: 1024
+  similarity_metric: cosine
+  num_results: 5
+
+# Chunking configuration
+chunking:
+  chunk_size: 512
+  chunk_overlap: 50
+  separator: "\n\n"
