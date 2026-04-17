@@ -416,6 +416,24 @@ What these checks do:
 2. `uv run pre-commit run --all-files` runs formatting and lint checks on the whole repository.
 3. `uv run pytest` verifies the test suite passes before you push.
 
+### Pushing the Same Branch to Multiple Remotes
+
+If you want to push the same week branch to both the personal student repository and the internal team repository, run the checks first and then push the branch to each remote explicitly.
+
+Example for `week4`:
+
+```bash
+uv sync --extra ci
+uv run pre-commit run --all-files
+uv run pytest
+git add -A
+git commit -m "your change message"
+git push student week4
+git push laya week4
+```
+
+This makes the target repository explicit and avoids accidentally pushing the branch to the wrong remote.
+
 Recommended push flow:
 
 ```bash
