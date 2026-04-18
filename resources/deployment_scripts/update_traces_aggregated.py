@@ -90,6 +90,11 @@ def normalize_payload_row(row: pd.Series) -> dict:
 
 
 if len(payload_pdf) > 0:
+    # Only keep successful requests and deduplicate
+    payload_pdf = payload_pdf[payload_pdf["status_code"] == 200]
+    payload_pdf = payload_pdf.drop_duplicates(
+        subset=["databricks_request_id"], keep="first"
+    )
     payload_rows = [normalize_payload_row(r) for _, r in payload_pdf.iterrows()]
     payload_traces_pdf = pd.DataFrame(payload_rows)
     logger.info(f"Normalized {len(payload_traces_pdf)} inference table traces")
@@ -180,10 +185,13 @@ def extract_request_text(trace_row: pd.Series) -> str:
         return str(trace_row.get("request", ""))[:500]
 
 
-# Filter to traces without assessments (not yet evaluated)
+# Filter to ALL traces without assessments (not yet evaluated)
 unevaluated = traces_pdf[
     traces_pdf["assessments"].apply(lambda x: x is None or len(x) == 0)
 ].copy()
+
+# Track which trace IDs are from experiments (can use mlflow.log_feedback)
+experiment_trace_ids = set(traces_pdf[traces_pdf["source"] == "experiment"]["trace_id"])
 
 # Debug: test extraction on first trace
 if len(traces_pdf) > 0:
@@ -221,6 +229,10 @@ if skip_evaluation:
 # COMMAND ----------
 # Run word_count_check on all traces and log feedback
 
+# Dict to store evaluation results for inference table traces
+# (can't use mlflow.log_feedback for them — no MLflow trace ID)
+eval_results: dict[str, dict] = {}
+
 if not skip_evaluation:
     wc_result = mlflow.genai.evaluate(
         data=eval_pdf[["inputs", "outputs"]],
@@ -233,13 +245,15 @@ if not skip_evaluation:
         strict=True,
     ):
         val = assessments[0]["feedback"]["value"]
-        mlflow.log_feedback(
-            trace_id=trace_id,
-            name="word_count_check",
-            value=val,
-        )
+        if trace_id in experiment_trace_ids:
+            mlflow.log_feedback(
+                trace_id=trace_id,
+                name="word_count_check",
+                value=val,
+            )
+        eval_results.setdefault(trace_id, {})["word_count_check"] = val
 
-    logger.info(f"Logged word_count_check for {len(eval_pdf)} traces")
+    logger.info(f"Evaluated word_count_check for {len(eval_pdf)} traces")
 
 # COMMAND ----------
 # Run LLM-judge scorers on a 10% sample and log feedback
@@ -262,13 +276,15 @@ if not skip_evaluation:
         for a in assessments:
             name = a["assessment_name"]
             val = a["feedback"]["value"]
-            mlflow.log_feedback(
-                trace_id=trace_id,
-                name=name,
-                value=val,
-            )
+            if trace_id in experiment_trace_ids:
+                mlflow.log_feedback(
+                    trace_id=trace_id,
+                    name=name,
+                    value=val,
+                )
+            eval_results.setdefault(trace_id, {})[name] = val
 
-    logger.info(f"Logged polite_tone/hook_in_post for {len(sampled_pdf)} traces")
+    logger.info(f"Evaluated polite_tone/hook_in_post for {len(sampled_pdf)} traces")
 
 # COMMAND ----------
 # Build aggregated table from all traces (experiment + inference)
@@ -345,13 +361,25 @@ def build_aggregated_row(row: pd.Series) -> dict:
 
     # word_count_check is a bool scorer → value is True/False
     wc_val = assessment_map.get("word_count_check")
+    # Guidelines scorers → value is "yes"/"no"
+    pt_val = assessment_map.get("polite_tone")
+    hp_val = assessment_map.get("hook_in_post")
+
+    # Overlay eval_results for inference table traces (no MLflow assessments)
+    trace_id = row.get("trace_id")
+    if trace_id in eval_results:
+        er = eval_results[trace_id]
+        if "word_count_check" in er:
+            wc_val = er["word_count_check"]
+        if "polite_tone" in er:
+            pt_val = er["polite_tone"]
+        if "hook_in_post" in er:
+            hp_val = er["hook_in_post"]
+
     result["word_count_check"] = (
         1 if wc_val is True or str(wc_val).lower() == "true" else 0
     )
-    # Guidelines scorers → value is "yes"/"no"
-    pt_val = assessment_map.get("polite_tone")
     result["polite_tone"] = 1 if str(pt_val).lower() in ("yes", "true", "pass") else 0
-    hp_val = assessment_map.get("hook_in_post")
     result["hook_in_post"] = 1 if str(hp_val).lower() in ("yes", "true", "pass") else 0
 
     return result
