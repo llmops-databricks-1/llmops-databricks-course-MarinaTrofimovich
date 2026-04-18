@@ -76,13 +76,13 @@ class ArxivAgent(ResponsesAgent):
 
         # Create tools from config
         host = self.workspace_client.config.host
+        mcp_urls = [f"{host}/api/2.0/mcp/vector-search/{catalog}/{schema}"]
+        if genie_space_id:
+            mcp_urls.append(f"{host}/api/2.0/mcp/genie/{genie_space_id}")
         tools = asyncio.run(
             create_mcp_tools(
                 w=self.workspace_client,
-                url_list=[
-                    f"{host}/api/2.0/mcp/vector-search/{catalog}/{schema}",
-                    f"{host}/api/2.0/mcp/genie/{genie_space_id}",
-                ],
+                url_list=mcp_urls,
             )
         )
         self._tools_dict = {tool.name: tool for tool in tools}
@@ -307,12 +307,13 @@ def log_register_agent(
 
     resources = [
         DatabricksServingEndpoint(endpoint_name=cfg.llm_endpoint),
-        DatabricksGenieSpace(genie_space_id=cfg.genie_space_id),
         DatabricksVectorSearchIndex(index_name=f"{cfg.catalog}.{cfg.schema}.arxiv_index"),
         DatabricksTable(table_name=f"{cfg.catalog}.{cfg.schema}.arxiv_papers"),
         DatabricksSQLWarehouse(warehouse_id=cfg.warehouse_id),
         DatabricksServingEndpoint(endpoint_name=cfg.embedding_endpoint),
     ]
+    if cfg.genie_space_id:
+        resources.append(DatabricksGenieSpace(genie_space_id=cfg.genie_space_id))
 
     model_config = {
         "catalog": cfg.catalog,

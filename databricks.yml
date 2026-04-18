@@ -23,16 +23,25 @@ variables:
 
 include:
   - resources/*.yml
+  - resources/dashboard/*.yml
+
+sync:
+  include:
+    - eval_inputs.txt
+    - project_config.yml
 
 targets:
   dev:
     default: true
-    mode: development
     workspace:
       host: https://adb-1065629792770920.0.azuredatabricks.net
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.target}/${bundle.name}
+      profile: adb-1065629792770920
+    variables:
+      schedule_pause_status: PAUSED
 
   acc:
+    mode: production
     workspace:
       host: https://adb-1065629792770920.0.azuredatabricks.net
       root_path: /Shared/.bundle/${bundle.target}/${bundle.name}
@@ -40,6 +49,7 @@ targets:
       schedule_pause_status: PAUSED
 
   prd:
+    mode: production
     workspace:
       host: https://adb-1065629792770920.0.azuredatabricks.net
       root_path: /Shared/.bundle/${bundle.target}/${bundle.name}
